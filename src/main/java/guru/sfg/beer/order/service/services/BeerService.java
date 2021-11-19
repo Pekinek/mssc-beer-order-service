@@ -1,6 +1,6 @@
 package guru.sfg.beer.order.service.services;
 
-import guru.sfg.beer.order.service.web.model.BeerDto;
+import com.mmocek.commons.model.BeerDto;
 
 import java.util.Optional;
 

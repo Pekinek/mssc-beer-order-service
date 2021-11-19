@@ -1,7 +1,7 @@
 package guru.sfg.beer.order.service.services;
 
 import guru.sfg.beer.order.service.bootstrap.BeerOrderBootStrap;
-import guru.sfg.beer.order.service.web.model.BeerDto;
+import com.mmocek.commons.model.BeerDto;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

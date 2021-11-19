@@ -2,8 +2,8 @@ package guru.sfg.beer.order.service.web.mappers;
 
 import guru.sfg.beer.order.service.domain.BeerOrderLine;
 import guru.sfg.beer.order.service.services.BeerService;
-import guru.sfg.beer.order.service.web.model.BeerDto;
-import guru.sfg.beer.order.service.web.model.BeerOrderLineDto;
+import com.mmocek.commons.model.BeerDto;
+import com.mmocek.commons.model.BeerOrderLineDto;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Optional;
