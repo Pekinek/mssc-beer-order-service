@@ -5,6 +5,7 @@ import guru.sfg.beer.order.service.config.JmsConfig;
 import guru.sfg.beer.order.service.domain.BeerOrder;
 import guru.sfg.beer.order.service.domain.BeerOrderEvent;
 import guru.sfg.beer.order.service.domain.BeerOrderStatus;
+import guru.sfg.beer.order.service.services.BeerOrderManagerImpl;
 import guru.sfg.beer.order.service.web.mappers.BeerOrderMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jms.core.JmsTemplate;
@@ -21,7 +22,7 @@ public class ValidateOrderAction implements Action<BeerOrderStatus, BeerOrderEve
 
     @Override
     public void execute(StateContext<BeerOrderStatus, BeerOrderEvent> context) {
-        BeerOrder beerOrder = context.getMessage().getHeaders().get("BeerOrder", BeerOrder.class);
+        BeerOrder beerOrder = context.getMessage().getHeaders().get(BeerOrderManagerImpl.BEER_ORDER, BeerOrder.class);
         jmsTemplate.convertAndSend(JmsConfig.VALIDATE_ORDER,
                 new ValidateBeerOrderRequest(beerOrderMapper.beerOrderToDto(beerOrder)));
     }
