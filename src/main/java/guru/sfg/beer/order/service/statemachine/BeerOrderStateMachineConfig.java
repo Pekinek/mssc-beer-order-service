@@ -2,18 +2,37 @@ package guru.sfg.beer.order.service.statemachine;
 
 import guru.sfg.beer.order.service.domain.BeerOrderEventEnum;
 import guru.sfg.beer.order.service.domain.BeerOrderStatusEnum;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.StateMachineConfigurerAdapter;
+import org.springframework.statemachine.config.builders.StateMachineConfigurationConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
 import org.springframework.statemachine.config.builders.StateMachineTransitionConfigurer;
+import org.springframework.statemachine.persist.DefaultStateMachinePersister;
+import org.springframework.statemachine.persist.StateMachinePersister;
 
 import java.util.EnumSet;
+import java.util.UUID;
 
 @Configuration
 @EnableStateMachineFactory
+@RequiredArgsConstructor
 public class BeerOrderStateMachineConfig extends StateMachineConfigurerAdapter<BeerOrderStatusEnum,
         BeerOrderEventEnum> {
+
+    DatabaseStateMachinePersist databaseStateMachinePersist;
+
+    @Bean
+    public StateMachinePersister<BeerOrderStatusEnum, BeerOrderEventEnum, UUID> persister(DatabaseStateMachinePersist databaseStateMachinePersist){
+        return new DefaultStateMachinePersister<>(databaseStateMachinePersist);
+    }
+
+    @Override
+    public void configure(StateMachineConfigurationConfigurer<BeerOrderStatusEnum, BeerOrderEventEnum> config) throws Exception {
+        config.withPersistence().runtimePersister(databaseStateMachinePersist);
+    }
 
     @Override
     public void configure(StateMachineStateConfigurer<BeerOrderStatusEnum, BeerOrderEventEnum> states) throws Exception {
