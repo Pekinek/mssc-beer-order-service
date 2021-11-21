@@ -13,7 +13,6 @@ import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.persist.StateMachinePersister;
 import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
@@ -30,7 +29,7 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
     private final StateMachinePersister<BeerOrderStatus, BeerOrderEvent, UUID> persister;
 
 
-    @Transactional
+
     @Override
     public BeerOrder newBeerOrder(BeerOrder beerOrder) {
         beerOrder.setId(null);
@@ -41,13 +40,15 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
         return savedBeerOrder;
     }
 
-    @Transactional
+
     @Override
     public void processValidationResult(UUID beerOrderId, Boolean isValid) {
 
         BeerOrder beerOrder = beerOrderRepository.findOneById(beerOrderId);
         if (isValid) {
             sendBeerOrderEvent(beerOrder, BeerOrderEvent.VALIDATION_PASSED);
+            BeerOrder validatedOrder = beerOrderRepository.findOneById(beerOrderId);
+            sendBeerOrderEvent(validatedOrder, BeerOrderEvent.ALLOCATE_ORDER);
         } else {
             sendBeerOrderEvent(beerOrder, BeerOrderEvent.VALIDATION_FAILED);
         }

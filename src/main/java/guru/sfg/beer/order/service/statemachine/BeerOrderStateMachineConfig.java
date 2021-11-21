@@ -2,6 +2,7 @@ package guru.sfg.beer.order.service.statemachine;
 
 import guru.sfg.beer.order.service.domain.BeerOrderEvent;
 import guru.sfg.beer.order.service.domain.BeerOrderStatus;
+import guru.sfg.beer.order.service.statemachine.actions.AllocateOrderAction;
 import guru.sfg.beer.order.service.statemachine.actions.ValidateOrderAction;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -24,6 +25,7 @@ public class BeerOrderStateMachineConfig extends StateMachineConfigurerAdapter<B
 
     private final DatabaseStateMachinePersist databaseStateMachinePersist;
     private final ValidateOrderAction validateOrderAction;
+    private final AllocateOrderAction allocateOrderAction;
 
 
     @Bean
@@ -66,6 +68,14 @@ public class BeerOrderStateMachineConfig extends StateMachineConfigurerAdapter<B
                    .withExternal()
                    .source(BeerOrderStatus.VALIDATION_PENDING)
                    .target(BeerOrderStatus.VALIDATION_EXCEPTION)
-                   .event(BeerOrderEvent.VALIDATION_FAILED);
+                   .event(BeerOrderEvent.VALIDATION_FAILED)
+                   .and()
+
+                   .withExternal()
+                   .source(BeerOrderStatus.VALIDATED)
+                   .target(BeerOrderStatus.ALLOCATION_PENDING)
+                   .event(BeerOrderEvent.ALLOCATE_ORDER)
+                   .action(allocateOrderAction);
+
     }
 }
