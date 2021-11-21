@@ -7,8 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -16,7 +14,6 @@ public class BeerOrderValidationResultListener {
 
     private BeerOrderManager beerOrderManager;
 
-    @Transactional
     @JmsListener(destination = JmsConfig.VALIDATE_ORDER_RESULT)
     public void listen(ValidationResult result) {
 
