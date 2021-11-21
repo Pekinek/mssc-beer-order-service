@@ -1,7 +1,8 @@
 package guru.sfg.beer.order.service.statemachine;
 
-import guru.sfg.beer.order.service.domain.BeerOrderEventEnum;
-import guru.sfg.beer.order.service.domain.BeerOrderStatusEnum;
+import guru.sfg.beer.order.service.domain.BeerOrderEvent;
+import guru.sfg.beer.order.service.domain.BeerOrderStatus;
+import guru.sfg.beer.order.service.statemachine.actions.ValidateOrderAction;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,50 +20,52 @@ import java.util.UUID;
 @Configuration
 @EnableStateMachineFactory
 @RequiredArgsConstructor
-public class BeerOrderStateMachineConfig extends StateMachineConfigurerAdapter<BeerOrderStatusEnum,
-        BeerOrderEventEnum> {
+public class BeerOrderStateMachineConfig extends StateMachineConfigurerAdapter<BeerOrderStatus, BeerOrderEvent> {
 
-    DatabaseStateMachinePersist databaseStateMachinePersist;
+    private final DatabaseStateMachinePersist databaseStateMachinePersist;
+    private final ValidateOrderAction validateOrderAction;
+
 
     @Bean
-    public StateMachinePersister<BeerOrderStatusEnum, BeerOrderEventEnum, UUID> persister(DatabaseStateMachinePersist databaseStateMachinePersist){
+    public StateMachinePersister<BeerOrderStatus, BeerOrderEvent, UUID> persister(DatabaseStateMachinePersist databaseStateMachinePersist) {
         return new DefaultStateMachinePersister<>(databaseStateMachinePersist);
     }
 
     @Override
-    public void configure(StateMachineConfigurationConfigurer<BeerOrderStatusEnum, BeerOrderEventEnum> config) throws Exception {
+    public void configure(StateMachineConfigurationConfigurer<BeerOrderStatus, BeerOrderEvent> config) throws Exception {
         config.withPersistence().runtimePersister(databaseStateMachinePersist);
     }
 
     @Override
-    public void configure(StateMachineStateConfigurer<BeerOrderStatusEnum, BeerOrderEventEnum> states) throws Exception {
+    public void configure(StateMachineStateConfigurer<BeerOrderStatus, BeerOrderEvent> states) throws Exception {
         states.withStates()
-              .initial(BeerOrderStatusEnum.NEW)
-              .states(EnumSet.allOf(BeerOrderStatusEnum.class))
-              .end(BeerOrderStatusEnum.DELIVERED)
-              .end(BeerOrderStatusEnum.PICKED_UP)
-              .end(BeerOrderStatusEnum.DELIVERY_EXCEPTION)
-              .end(BeerOrderStatusEnum.VALIDATION_EXCEPTION)
-              .end(BeerOrderStatusEnum.ALLOCATION_EXCEPTION);
+              .initial(BeerOrderStatus.NEW)
+              .states(EnumSet.allOf(BeerOrderStatus.class))
+              .end(BeerOrderStatus.DELIVERED)
+              .end(BeerOrderStatus.PICKED_UP)
+              .end(BeerOrderStatus.DELIVERY_EXCEPTION)
+              .end(BeerOrderStatus.VALIDATION_EXCEPTION)
+              .end(BeerOrderStatus.ALLOCATION_EXCEPTION);
     }
 
     @Override
-    public void configure(StateMachineTransitionConfigurer<BeerOrderStatusEnum, BeerOrderEventEnum> transitions) throws Exception {
+    public void configure(StateMachineTransitionConfigurer<BeerOrderStatus, BeerOrderEvent> transitions) throws Exception {
         transitions.withExternal()
-                   .source(BeerOrderStatusEnum.NEW)
-                   .target(BeerOrderStatusEnum.VALIDATION_PENDING)
-                   .event(BeerOrderEventEnum.VALIDATE_ORDER)
+                   .source(BeerOrderStatus.NEW)
+                   .target(BeerOrderStatus.VALIDATION_PENDING)
+                   .event(BeerOrderEvent.VALIDATE_ORDER)
+                   .action(validateOrderAction)
                    .and()
 
                    .withExternal()
-                   .source(BeerOrderStatusEnum.VALIDATION_PENDING)
-                   .target(BeerOrderStatusEnum.VALIDATED)
-                   .event(BeerOrderEventEnum.VALIDATION_PASSED)
+                   .source(BeerOrderStatus.VALIDATION_PENDING)
+                   .target(BeerOrderStatus.VALIDATED)
+                   .event(BeerOrderEvent.VALIDATION_PASSED)
                    .and()
 
                    .withExternal()
-                   .source(BeerOrderStatusEnum.VALIDATION_PENDING)
-                   .target(BeerOrderStatusEnum.VALIDATION_EXCEPTION)
-                   .event(BeerOrderEventEnum.VALIDATION_FAILED);
+                   .source(BeerOrderStatus.VALIDATION_PENDING)
+                   .target(BeerOrderStatus.VALIDATION_EXCEPTION)
+                   .event(BeerOrderEvent.VALIDATION_FAILED);
     }
 }

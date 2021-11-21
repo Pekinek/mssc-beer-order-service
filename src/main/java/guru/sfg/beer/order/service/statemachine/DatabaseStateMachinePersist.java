@@ -1,8 +1,8 @@
 package guru.sfg.beer.order.service.statemachine;
 
 import guru.sfg.beer.order.service.domain.BeerOrder;
-import guru.sfg.beer.order.service.domain.BeerOrderEventEnum;
-import guru.sfg.beer.order.service.domain.BeerOrderStatusEnum;
+import guru.sfg.beer.order.service.domain.BeerOrderEvent;
+import guru.sfg.beer.order.service.domain.BeerOrderStatus;
 import guru.sfg.beer.order.service.repositories.BeerOrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,15 +20,13 @@ import java.util.UUID;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class DatabaseStateMachinePersist extends AbstractPersistingStateMachineInterceptor<BeerOrderStatusEnum,
-        BeerOrderEventEnum, UUID> implements StateMachineRuntimePersister<BeerOrderStatusEnum,
-                BeerOrderEventEnum, UUID>, StateMachinePersist<BeerOrderStatusEnum, BeerOrderEventEnum, UUID> {
+public class DatabaseStateMachinePersist extends AbstractPersistingStateMachineInterceptor<BeerOrderStatus, BeerOrderEvent, UUID> implements StateMachineRuntimePersister<BeerOrderStatus, BeerOrderEvent, UUID>, StateMachinePersist<BeerOrderStatus, BeerOrderEvent, UUID> {
 
     private BeerOrderRepository beerOrderRepository;
 
     @Transactional
     @Override
-    public void write(StateMachineContext<BeerOrderStatusEnum, BeerOrderEventEnum> context,
+    public void write(StateMachineContext<BeerOrderStatus, BeerOrderEvent> context,
                       UUID contextObj) {
         BeerOrder beerOrder = beerOrderRepository.getById(contextObj);
         beerOrder.setOrderStatus(context.getState());
@@ -38,14 +36,14 @@ public class DatabaseStateMachinePersist extends AbstractPersistingStateMachineI
 
     @Transactional
     @Override
-    public StateMachineContext<BeerOrderStatusEnum, BeerOrderEventEnum> read(UUID contextObj) {
+    public StateMachineContext<BeerOrderStatus, BeerOrderEvent> read(UUID contextObj) {
         BeerOrder beerOrder = beerOrderRepository.getById(contextObj);
 
         return new DefaultStateMachineContext<>(beerOrder.getOrderStatus(), null, null, null);
     }
 
     @Override
-    public StateMachineInterceptor<BeerOrderStatusEnum, BeerOrderEventEnum> getInterceptor() {
+    public StateMachineInterceptor<BeerOrderStatus, BeerOrderEvent> getInterceptor() {
         return this;
     }
 }

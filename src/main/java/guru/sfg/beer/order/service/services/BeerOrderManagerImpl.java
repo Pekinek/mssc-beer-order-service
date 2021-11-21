@@ -1,8 +1,8 @@
 package guru.sfg.beer.order.service.services;
 
 import guru.sfg.beer.order.service.domain.BeerOrder;
-import guru.sfg.beer.order.service.domain.BeerOrderEventEnum;
-import guru.sfg.beer.order.service.domain.BeerOrderStatusEnum;
+import guru.sfg.beer.order.service.domain.BeerOrderEvent;
+import guru.sfg.beer.order.service.domain.BeerOrderStatus;
 import guru.sfg.beer.order.service.repositories.BeerOrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.Message;
@@ -21,25 +21,25 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BeerOrderManagerImpl implements BeerOrderManager {
 
-    private final StateMachineFactory<BeerOrderStatusEnum, BeerOrderEventEnum> stateMachineFactory;
+    private final StateMachineFactory<BeerOrderStatus, BeerOrderEvent> stateMachineFactory;
     private final BeerOrderRepository beerOrderRepository;
-    private final StateMachinePersister<BeerOrderStatusEnum, BeerOrderEventEnum, UUID> persister;
+    private final StateMachinePersister<BeerOrderStatus, BeerOrderEvent, UUID> persister;
 
 
     @Transactional
     @Override
     public BeerOrder newBeerOrder(BeerOrder beerOrder) {
         beerOrder.setId(null);
-        beerOrder.setOrderStatus(BeerOrderStatusEnum.NEW);
+        beerOrder.setOrderStatus(BeerOrderStatus.NEW);
 
         return beerOrderRepository.save(beerOrder);
     }
 
-    private void sendBeerOrderEvent(BeerOrder beerOrder, BeerOrderEventEnum eventEnum) throws Exception {
-        StateMachine<BeerOrderStatusEnum, BeerOrderEventEnum> sm = stateMachineFactory.getStateMachine(
+    private void sendBeerOrderEvent(BeerOrder beerOrder, BeerOrderEvent eventEnum) throws Exception {
+        StateMachine<BeerOrderStatus, BeerOrderEvent> sm = stateMachineFactory.getStateMachine(
                 beerOrder.getId());
         persister.restore(sm, beerOrder.getId());
-        Message<BeerOrderEventEnum> msg = MessageBuilder.withPayload(eventEnum).build();
+        Message<BeerOrderEvent> msg = MessageBuilder.withPayload(eventEnum).setHeader("BeerOrder", beerOrder).build();
         sm.sendEvent(Mono.just(msg));
     }
 }
