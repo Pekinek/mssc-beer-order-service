@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class BeerOrderAllocationResultListener {
 
-    private BeerOrderManager beerOrderManager;
+    private final BeerOrderManager beerOrderManager;
 
     @JmsListener(destination = JmsConfig.ALLOCATE_ORDER_RESPONSE)
     public void listen(AllocateOrderResult result) {

@@ -12,12 +12,13 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class BeerOrderValidationResultListener {
 
-    private BeerOrderManager beerOrderManager;
+    private final BeerOrderManager beerOrderManager;
 
     @JmsListener(destination = JmsConfig.VALIDATE_ORDER_RESULT)
     public void listen(ValidationResult result) {
 
-        log.debug(String.format("Validation result for order id: %s is %s", result.getOrderId(), result.isValid()));
-        beerOrderManager.processValidationResult(result.getOrderId(), result.isValid());
+            log.debug(String.format("Validation result for order id: %s is %s", result.getOrderId(), result.isValid()));
+            beerOrderManager.processValidationResult(result.getOrderId(), result.isValid());
+
     }
 }

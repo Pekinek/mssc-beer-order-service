@@ -5,6 +5,7 @@ import guru.sfg.beer.order.service.domain.BeerOrder;
 import guru.sfg.beer.order.service.domain.BeerOrderEvent;
 import guru.sfg.beer.order.service.domain.BeerOrderStatus;
 import guru.sfg.beer.order.service.repositories.BeerOrderRepository;
+import guru.sfg.beer.order.service.statemachine.BeerOrderStateChangeInterceptor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
@@ -12,10 +13,9 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.StateMachineContext;
 import org.springframework.statemachine.config.StateMachineFactory;
-import org.springframework.statemachine.persist.StateMachinePersister;
 import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -30,7 +30,7 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
 
     private final StateMachineFactory<BeerOrderStatus, BeerOrderEvent> stateMachineFactory;
     private final BeerOrderRepository beerOrderRepository;
-    private final StateMachinePersister<BeerOrderStatus, BeerOrderEvent, UUID> persister;
+    private final BeerOrderStateChangeInterceptor changeInterceptor;
 
 
     @Override
@@ -38,13 +38,14 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
         beerOrder.setId(null);
         beerOrder.setOrderStatus(BeerOrderStatus.NEW);
 
-        BeerOrder savedBeerOrder = beerOrderRepository.save(beerOrder);
+        BeerOrder savedBeerOrder = beerOrderRepository.saveAndFlush(beerOrder);
         sendBeerOrderEvent(savedBeerOrder, BeerOrderEvent.VALIDATE_ORDER);
         return savedBeerOrder;
     }
 
 
     @Override
+    @Transactional
     public void processValidationResult(UUID beerOrderId, Boolean isValid) {
 
         BeerOrder beerOrder = beerOrderRepository.findOneById(beerOrderId);
@@ -105,7 +106,7 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
     private void sendBeerOrderEvent(BeerOrder beerOrder, BeerOrderEvent eventEnum) {
         StateMachine<BeerOrderStatus, BeerOrderEvent> sm = build(beerOrder);
         Message<BeerOrderEvent> msg = MessageBuilder.withPayload(eventEnum).setHeader(BEER_ORDER, beerOrder).build();
-        sm.sendEvent(Mono.just(msg));
+        sm.sendEvent(msg);
     }
 
     private StateMachine<BeerOrderStatus, BeerOrderEvent> build(BeerOrder beerOrder) {
@@ -113,8 +114,10 @@ public class BeerOrderManagerImpl implements BeerOrderManager {
         sm.stopReactively().block();
         StateMachineContext<BeerOrderStatus, BeerOrderEvent> context = new DefaultStateMachineContext<>(
                 beerOrder.getOrderStatus(), null, null, null);
-        sm.getStateMachineAccessor()
-          .doWithAllRegions(function -> function.resetStateMachineReactively(context).block());
+        sm.getStateMachineAccessor().doWithAllRegions(function -> {
+            function.resetStateMachineReactively(context).block();
+            function.addStateMachineInterceptor(changeInterceptor);
+        });
         sm.startReactively().block();
         return sm;
     }
