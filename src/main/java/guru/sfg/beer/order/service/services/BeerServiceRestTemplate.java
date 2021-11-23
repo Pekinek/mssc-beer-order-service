@@ -14,7 +14,7 @@ import java.util.Optional;
 @Component
 public class BeerServiceRestTemplate implements BeerService {
 
-    private final String BEER_PATH = "/api/v1/beerUpc/{beerUpc}";
+    public final static String BEER_PATH = "/api/v1/beerUpc/";
     private final RestTemplate restTemplate;
     private String beerServiceHost;
 
@@ -31,7 +31,7 @@ public class BeerServiceRestTemplate implements BeerService {
 
         log.debug("Calling Beer Service");
 
-        BeerDto beerDto = restTemplate.getForObject(beerServiceHost + BEER_PATH, BeerDto.class, beerUpc);
+        BeerDto beerDto = restTemplate.getForObject(beerServiceHost + BEER_PATH+beerUpc, BeerDto.class);
 
         return Optional.ofNullable(beerDto);
     }
