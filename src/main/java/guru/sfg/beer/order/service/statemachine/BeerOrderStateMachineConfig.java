@@ -23,6 +23,7 @@ public class BeerOrderStateMachineConfig extends StateMachineConfigurerAdapter<B
     private final AllocateOrderAction allocateOrderAction;
     private final Action<BeerOrderStatus, BeerOrderEvent> validationFailureAction;
     private final Action<BeerOrderStatus, BeerOrderEvent> allocationFailureAction;
+    private final Action<BeerOrderStatus, BeerOrderEvent> cancelAllocatedOrderAction;
 
     @Override
     public void configure(StateMachineStateConfigurer<BeerOrderStatus, BeerOrderEvent> states) throws Exception {
@@ -31,6 +32,7 @@ public class BeerOrderStateMachineConfig extends StateMachineConfigurerAdapter<B
               .states(EnumSet.allOf(BeerOrderStatus.class))
               .end(BeerOrderStatus.DELIVERED)
               .end(BeerOrderStatus.PICKED_UP)
+              .end(BeerOrderStatus.CANCELLED)
               .end(BeerOrderStatus.DELIVERY_EXCEPTION)
               .end(BeerOrderStatus.VALIDATION_EXCEPTION)
               .end(BeerOrderStatus.ALLOCATION_EXCEPTION);
@@ -59,6 +61,12 @@ public class BeerOrderStateMachineConfig extends StateMachineConfigurerAdapter<B
                    .and()
 
                    .withExternal()
+                   .source(BeerOrderStatus.VALIDATION_PENDING)
+                   .target(BeerOrderStatus.CANCELLED)
+                   .event(BeerOrderEvent.CANCEL_ORDER)
+                   .and()
+
+                   .withExternal()
                    .source(BeerOrderStatus.VALIDATED)
                    .target(BeerOrderStatus.ALLOCATION_PENDING)
                    .event(BeerOrderEvent.ALLOCATE_ORDER)
@@ -66,9 +74,21 @@ public class BeerOrderStateMachineConfig extends StateMachineConfigurerAdapter<B
                    .and()
 
                    .withExternal()
+                   .source(BeerOrderStatus.VALIDATED)
+                   .target(BeerOrderStatus.CANCELLED)
+                   .event(BeerOrderEvent.CANCEL_ORDER)
+                   .and()
+
+                   .withExternal()
                    .source(BeerOrderStatus.ALLOCATION_PENDING)
                    .target(BeerOrderStatus.ALLOCATED)
                    .event(BeerOrderEvent.ALLOCATION_SUCCESS)
+                   .and()
+
+                   .withExternal()
+                   .source(BeerOrderStatus.ALLOCATION_PENDING)
+                   .target(BeerOrderStatus.CANCELLED)
+                   .event(BeerOrderEvent.CANCEL_ORDER)
                    .and()
 
                    .withExternal()
@@ -87,6 +107,13 @@ public class BeerOrderStateMachineConfig extends StateMachineConfigurerAdapter<B
                    .withExternal()
                    .source(BeerOrderStatus.ALLOCATED)
                    .target(BeerOrderStatus.PICKED_UP)
-                   .event(BeerOrderEvent.BEER_ORDER_PICKED_UP);
+                   .event(BeerOrderEvent.BEER_ORDER_PICKED_UP)
+                   .and()
+
+                   .withExternal()
+                   .source(BeerOrderStatus.ALLOCATED)
+                   .target(BeerOrderStatus.CANCELLED)
+                   .event(BeerOrderEvent.CANCEL_ORDER)
+                   .action(cancelAllocatedOrderAction);
     }
 }
