@@ -16,6 +16,7 @@ public class JmsConfig {
     public static final String ALLOCATE_ORDER = "allocate-order";
     public static final String ALLOCATE_ORDER_RESPONSE = "allocate-order-response";
     public static final String ALLOCATE_FAILURE_QUEUE = "allocate-failure";
+    public static final String DEALLOCATE_ORDER = "deallocate-order";
 
     @Bean
     public MessageConverter messageConverter(ObjectMapper objectMapper){

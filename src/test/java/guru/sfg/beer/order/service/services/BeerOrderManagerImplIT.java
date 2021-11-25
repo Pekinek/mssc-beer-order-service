@@ -6,6 +6,7 @@ import com.github.jenspiegsa.wiremockextension.WireMockExtension;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.mmocek.commons.model.AllocationFailureEvent;
 import com.mmocek.commons.model.BeerDto;
+import com.mmocek.commons.model.DeallocateOrderRequest;
 import guru.sfg.beer.order.service.config.JmsConfig;
 import guru.sfg.beer.order.service.domain.BeerOrder;
 import guru.sfg.beer.order.service.domain.BeerOrderLine;
@@ -131,6 +132,33 @@ public class BeerOrderManagerImplIT {
 
         assertNotNull(allocationFailureEvent);
         assertThat(allocationFailureEvent.getOrderId()).isEqualTo(savedBeerOrder.getId());
+    }
+
+    @Test
+    void testAllocationCancelled() throws JsonProcessingException {
+        BeerDto beerDto = BeerDto.builder().id(beerId).upc("12345").build();
+
+        wireMockServer.stubFor(get(BeerServiceRestTemplate.BEER_PATH+ "12345")
+                .willReturn(okJson(objectMapper.writeValueAsString(beerDto))));
+
+        BeerOrder beerOrder = createBeerOrder();
+        BeerOrder savedBeerOrder = beerOrderManager.newBeerOrder(beerOrder);
+
+        await().untilAsserted(() -> {
+            BeerOrder foundOrder = beerOrderRepository.findById(beerOrder.getId()).get();
+            assertEquals(BeerOrderStatus.ALLOCATED, foundOrder.getOrderStatus());
+        });
+
+        beerOrderManager.cancelBeerOrder(savedBeerOrder.getId());
+        DeallocateOrderRequest allocationFailureEvent = (DeallocateOrderRequest) jmsTemplate.receiveAndConvert(
+                JmsConfig.DEALLOCATE_ORDER);
+
+        assertNotNull(allocationFailureEvent);
+        assertThat(allocationFailureEvent.getBeerOrderDto().getId()).isEqualTo(savedBeerOrder.getId());
+        await().untilAsserted(() -> {
+            BeerOrder foundOrder = beerOrderRepository.findById(beerOrder.getId()).get();
+            assertEquals(BeerOrderStatus.CANCELLED, foundOrder.getOrderStatus());
+        });
     }
 
     @Test
