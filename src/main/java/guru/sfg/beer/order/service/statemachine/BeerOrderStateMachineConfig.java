@@ -6,6 +6,7 @@ import guru.sfg.beer.order.service.statemachine.actions.AllocateOrderAction;
 import guru.sfg.beer.order.service.statemachine.actions.ValidateOrderAction;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.statemachine.action.Action;
 import org.springframework.statemachine.config.EnableStateMachineFactory;
 import org.springframework.statemachine.config.StateMachineConfigurerAdapter;
 import org.springframework.statemachine.config.builders.StateMachineStateConfigurer;
@@ -20,6 +21,7 @@ public class BeerOrderStateMachineConfig extends StateMachineConfigurerAdapter<B
 
     private final ValidateOrderAction validateOrderAction;
     private final AllocateOrderAction allocateOrderAction;
+    private final Action<BeerOrderStatus, BeerOrderEvent> validationFailureAction;
 
     @Override
     public void configure(StateMachineStateConfigurer<BeerOrderStatus, BeerOrderEvent> states) throws Exception {
@@ -52,6 +54,7 @@ public class BeerOrderStateMachineConfig extends StateMachineConfigurerAdapter<B
                    .source(BeerOrderStatus.VALIDATION_PENDING)
                    .target(BeerOrderStatus.VALIDATION_EXCEPTION)
                    .event(BeerOrderEvent.VALIDATION_FAILED)
+                   .action(validationFailureAction)
                    .and()
 
                    .withExternal()

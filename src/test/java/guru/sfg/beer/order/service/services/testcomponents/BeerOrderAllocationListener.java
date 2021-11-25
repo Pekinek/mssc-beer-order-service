@@ -25,7 +25,6 @@ public class BeerOrderAllocationListener {
         boolean sendResponse = true;
 
         Thread.sleep(200);
-        //set allocation error
         if (request.getBeerOrderDto().getCustomerRef() != null) {
             switch (request.getBeerOrderDto().getCustomerRef()) {
                 case "fail-allocation":
